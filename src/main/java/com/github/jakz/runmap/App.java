@@ -10,6 +10,7 @@ import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
+import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
 import javax.xml.bind.JAXBException;
 
@@ -27,6 +28,7 @@ import com.pixbits.lib.ui.UIUtils;
 import com.pixbits.lib.ui.WrapperFrame;
 import com.pixbits.lib.ui.color.Color;
 import com.pixbits.lib.ui.color.GradientColorGenerator;
+import com.pixbits.lib.ui.table.DataSource;
 import com.teamdev.jxmaps.LatLng;
 import com.teamdev.jxmaps.LatLngBounds;
 import com.teamdev.jxmaps.Map;
@@ -81,15 +83,17 @@ public class App
     
     System.out.printf("Found %d gpx files\n", files.size());
     
-    List<GpxTrackSegment> tracks = files.stream()
+    List<Workout> tracks = files.stream()
       .map(p -> { System.out.println("Parsing "+p.toString()); return p; })
       .map(StreamException.rethrowFunction(GpxParser::parse))
       .flatMap(Gpx::stream)
       .flatMap(GpxTrack::stream)
+      .map(Workout::new)
+      .sorted((w1, w2) -> w1.start().compareTo(w2.start()))
       .collect(Collectors.toList());
     
     List<Coordinate> points = tracks.stream()
-      .map(s -> { System.out.println("Total length: "+s.totalLength()); return s; })
+      .map(s -> { System.out.println(s.start()+"  Length: "+s.length()+ " Altitude sum: "+s.altitudeSum()+" delta: "+s.altitudeDifference()+" climb: "+s.climb()); return s.gpx(); })
       .flatMap(GpxTrackSegment::stream)
       .map(GpxWaypoint::coordinate)
       .collect(Collectors.toList());    
@@ -135,15 +139,18 @@ public class App
       rectangle.setBounds(new LatLngBounds(new LatLng(baseY, baseX), new LatLng(baseY + zoneHeight, baseX + zoneWidth)));
     }*/
     
-    for (GpxTrackSegment track : tracks)
+    /*for (Workout track : tracks)
     {
       GpsTrackLine line = new GpsTrackLine(map);
-      line.setSegment(track);
+      line.setSegment(track.gpx());
       line.setWeight(2.0f);
       line.setOpacity(0.6f);
       line.setVisible(true);
-    }
+    }*/
     
-
+    JPanel panel = UIUtils.buildFillPanel(new WorkoutTable(DataSource.of(tracks)), true);
+    WrapperFrame<?> frame = UIUtils.buildFrame(panel, "Workouts");
+    frame.exitOnClose();
+    frame.setVisible(true);
   }
 }
