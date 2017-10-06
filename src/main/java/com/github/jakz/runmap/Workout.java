@@ -1,11 +1,13 @@
 package com.github.jakz.runmap;
 
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.Arrays;
 import java.util.OptionalDouble;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.atomic.DoubleAdder;
+import java.util.function.Function;
 import java.util.stream.DoubleStream;
 
 import org.w3c.dom.Element;
@@ -31,12 +33,16 @@ public class Workout
   private double altitudeSum = Double.NaN;
   private double climb = Double.NaN;
   
+  private double calories = Double.NaN;
+  
   private int averageHeartRate = -1;
   private int maxHeartRate = -1;
   private int minHeartRate = -1;
   
   private GpxTrackSegment gpx;
   private int[] heartRates;
+  
+  private Function<Workout, Double> caloriesCalculator;
   
   public Workout(GpxTrackSegment gpx)
   {
@@ -47,9 +53,57 @@ public class Workout
     GpxWaypoint end = gpx.points().get(gpx.points().size()-1);
     
     this.gpx = gpx;
-    this.start = start.time();
-    this.end = end.time();
+    this.start = start.time().withZoneSameInstant(ZoneId.systemDefault());
+    this.end = end.time().withZoneSameInstant(ZoneId.systemDefault());
     this.lapse = TimeInterval.of(start.time(), end.time());
+    
+    this.caloriesCalculator = w -> {
+      double base = w.length()*58.0f;
+      double addendum = 0.0;
+      
+      if (!Double.isNaN(gpx.get(0).coordinate().alt()))
+      {
+        double strainLength = 0.0;
+        double strainAltitude = 0.0;
+        
+        double lastAltitude = Double.NaN;
+        
+        for (int i = 0; i < gpx.size(); ++i)
+        {
+          GpxWaypoint p = gpx.get(i);
+          
+          if (Double.isNaN(lastAltitude))
+          {
+            strainLength = 0.0;
+            strainAltitude = 0.0;
+            lastAltitude = p.coordinate().alt();
+          }
+          else
+          {
+            double alt = p.coordinate().alt();
+            
+            if (alt > lastAltitude)
+            {
+              strainLength += gpx.distanceBetweenPoints(i-1);
+              strainAltitude += alt - lastAltitude;
+              lastAltitude = alt;
+            }
+            else
+            {
+              if (strainAltitude > 5.0)
+              {
+                double slope = strainAltitude / (strainLength * 1000);
+                addendum += (strainLength * 58.0) * (slope * 8);
+              }
+              
+              lastAltitude = Double.NaN;
+            }
+          }
+        }
+      }
+ 
+      return base + addendum;
+    };
   }
   
   public void cacheHeartRateStatistics()
@@ -153,6 +207,18 @@ public class Workout
     return length;
   }
   
+  public double speed()
+  {
+    double minutes = lapse.asMinutes();
+    return length() / (minutes / 60);
+  }
+  
+  public double pace()
+  {
+    double minutes = lapse.asMinutes();
+    return minutes / length();
+  }
+  
   public double minAltitude()
   {
     if (Double.isNaN(minAltitude))
@@ -215,5 +281,12 @@ public class Workout
       cacheHeartRateStatistics();
     
     return maxHeartRate;
+  }
+  
+  public double calories()
+  {
+    if (Double.isNaN(calories))
+      calories = caloriesCalculator.apply(this);
+    return calories;
   }
 }

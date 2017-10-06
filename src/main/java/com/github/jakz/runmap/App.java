@@ -89,7 +89,7 @@ public class App
       .flatMap(Gpx::stream)
       .flatMap(GpxTrack::stream)
       .map(Workout::new)
-      .sorted((w1, w2) -> w1.start().compareTo(w2.start()))
+      .sorted((w1, w2) -> w2.start().compareTo(w1.start()))
       .collect(Collectors.toList());
     
     List<Coordinate> points = tracks.stream()
@@ -152,5 +152,9 @@ public class App
     WrapperFrame<?> frame = UIUtils.buildFrame(panel, "Workouts");
     frame.exitOnClose();
     frame.setVisible(true);
+    
+    JPanel globalStats = UIUtils.buildFillPanel(new GlobalStatsTable(DataSource.of(tracks)), true);
+    WrapperFrame<?> globalStatsFrame = UIUtils.buildFrame(globalStats, "Statistics");
+    globalStatsFrame.setVisible(true);
   }
 }
