@@ -3,6 +3,8 @@ package com.github.jakz.runmap;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.ZonedDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -44,6 +46,66 @@ public class App
   public static void main( String[] args )
   {
     UIUtils.setNimbusLNF();
+    
+    try
+    {
+      Gpx gpx = GpxParser.parse(Paths.get("/Users/jack/Desktop/Fix.gpx"));
+      GpxTrackSegment segment = gpx.tracks().get(0).segments().get(0);
+      
+      List<GpxWaypoint> points = segment.points();
+      System.out.printf("Loaded a track with %d points\n", segment.size());
+      ZonedDateTime zonedTime = points.get(0).time();
+      ZonedDateTime finalTime = points.get(points.size()-1).time();
+      ZonedDateTime last = zonedTime;
+      
+      //ZonedDateTime finalTime = zonedTime.plusMinutes(89);
+      //ZonedDateTime last = points.get(points.size()-1).time();
+      //int lastValid = points.size()-1;
+      
+      //while (true)
+      //{
+        //if (!last.equals(points.get(lastValid).time()))
+        //  break;
+        
+        //--lastValid;
+      //}
+ 
+      //++lastValid;
+      
+      int lastValid = 0;  
+      
+      double totalDistance = 0.0f;
+      for (int i = lastValid; i < points.size()-1; ++i)
+        totalDistance += segment.distanceBetweenPoints(i);
+      long totalSeconds = ChronoUnit.SECONDS.between(last, finalTime);
+      
+      System.out.printf("Found %d points to average on a distance %s in a time range of %f minutes\n",
+          (points.size()-lastValid-1),
+          String.format("%.2fkm", totalDistance),
+          totalSeconds / 60.0f       
+      );
+      
+      double distanceSum = 0.0f;
+      for (int i = lastValid; i < points.size()-1; ++i)
+      {
+        distanceSum += segment.distanceBetweenPoints(i);
+        double percent = distanceSum / totalDistance;
+        int deltaSeconds = (int)(percent * totalSeconds);
+        ZonedDateTime oldTime = points.get(i+1).time();
+        points.get(i+1).setTime(last.plusSeconds(deltaSeconds));
+        System.out.println("Adjusted timestamp from "+oldTime+" to "+points.get(i+1).time());
+      }
+      
+      GpxParser.save(gpx, Paths.get("/Users/jack/Desktop/test2.gpx"));
+
+    }
+    catch (Exception e)
+    {
+      e.printStackTrace();
+    }
+    
+    if (true)
+      return;
     
     Consumer<Map> callback = map -> {
       try
@@ -100,7 +162,7 @@ public class App
         
     System.out.printf("Loaded %d waypoints\n", points.size());
 
-    final double zoneWidth = 0.0002;// 0.0002;// 0.0005;
+    final double zoneWidth = 0.001;// 0.0002;// 0.0005;
     final double zoneHeight = zoneWidth * 0.76;
     java.util.Map<Zone, Integer> heatMap = new HashMap<>();
     
@@ -139,14 +201,16 @@ public class App
       rectangle.setBounds(new LatLngBounds(new LatLng(baseY, baseX), new LatLng(baseY + zoneHeight, baseX + zoneWidth)));
     }*/
     
-    /*for (Workout track : tracks)
+    for (Workout track : tracks)
     {
       GpsTrackLine line = new GpsTrackLine(map);
       line.setSegment(track.gpx());
-      line.setWeight(2.0f);
+      line.setWeight(3.0f);
       line.setOpacity(0.6f);
       line.setVisible(true);
-    }*/
+      line.setColor(java.awt.Color.RED);
+      line.build();
+    }
     
     JPanel panel = UIUtils.buildFillPanel(new WorkoutTable(DataSource.of(tracks)), true);
     WrapperFrame<?> frame = UIUtils.buildFrame(panel, "Workouts");

@@ -39,12 +39,21 @@ public class GpsTrackLine extends Polyline
     });
   }
   
+  public void setAndBuild(GpxTrackSegment segment)
+  {
+    setSegment(segment);
+    rebuild();
+  }
+  
+  public void setSegment(GpxTrackSegment segment, Color color)
+  {
+    this.track = segment;
+    this.color = color;
+  }
+  
   public void setSegment(GpxTrackSegment track)
   {
-    this.track = track;
-    this.color = track.color();
-    
-    rebuild();
+    setSegment(track, track.color());
   }
   
   public void setWeight(float weight) { this.weight = weight; }
@@ -72,6 +81,8 @@ public class GpsTrackLine extends Polyline
   {
     Coordinate coordinate = new Coordinate(event.latLng().getLat(), event.latLng().getLng());
   }
+  
+  public void build() { rebuild(); }
   
   public Map map() { return map; }
   
