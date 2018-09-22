@@ -47,6 +47,9 @@ public class App
   {
     UIUtils.setNimbusLNF();
     
+    if (false)
+    {
+    
     try
     {
       Gpx gpx = GpxParser.parse(Paths.get("/Users/jack/Desktop/Fix.gpx"));
@@ -107,6 +110,8 @@ public class App
     if (true)
       return;
     
+    }
+    
     Consumer<Map> callback = map -> {
       try
       {
@@ -140,14 +145,15 @@ public class App
   
   public static void setup(Map map) throws IOException, SAXException, JAXBException
   {
-    FolderScanner scanner = new FolderScanner("glob:*.gpx", null, true);
+    FolderScanner scanner = new FolderScanner("glob:*.fit", null, true);
     Set<Path> files = scanner.scan(Paths.get("data"));
     
     System.out.printf("Found %d gpx files\n", files.size());
     
     List<Workout> tracks = files.stream()
       .map(p -> { System.out.println("Parsing "+p.toString()); return p; })
-      .map(StreamException.rethrowFunction(GpxParser::parse))
+      .map(StreamException.rethrowFunction(p -> { return new FitParser().parse(p); }))
+      //.map(StreamException.rethrowFunction(GpxParser::parse))
       .flatMap(Gpx::stream)
       .flatMap(GpxTrack::stream)
       .map(Workout::new)
