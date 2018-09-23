@@ -8,16 +8,10 @@ import com.pixbits.lib.io.xml.gpx.Coordinate;
 import com.pixbits.lib.io.xml.gpx.GpxTrackSegment;
 import com.pixbits.lib.io.xml.gpx.GpxWaypoint;
 import com.pixbits.lib.ui.color.ColorUtils;
-import com.teamdev.jxmaps.LatLng;
-import com.teamdev.jxmaps.Map;
-import com.teamdev.jxmaps.MapMouseEvent;
-import com.teamdev.jxmaps.MouseEvent;
-import com.teamdev.jxmaps.Polyline;
-import com.teamdev.jxmaps.PolylineOptions;
 
-public class GpsTrackLine extends Polyline 
+public class GpsTrackLine 
 {  
-  private GpxTrackSegment track;
+  /*private GpxTrackSegment track;
   private final Map map;
   
   private Color color;
@@ -92,5 +86,5 @@ public class GpsTrackLine extends Polyline
       .map(GpxWaypoint::coordinate)
       .map(c -> new Coordinate(c))
       .collect(Collectors.toList());
-  }
+  }*/
 }

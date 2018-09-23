@@ -25,9 +25,6 @@ import org.jxmapviewer.viewer.TileFactoryInfo;
 import org.jxmapviewer.viewer.Waypoint;
 import org.jxmapviewer.viewer.WaypointPainter;
 
-import com.pixbits.lib.lang.Point;
-
-
 /**
  * A simple sample application that shows
  * a OSM map of Europe containing a route with waypoints
@@ -105,7 +102,7 @@ public class Sample2
   }
   
   
-  public static void main(String[] args)
+  public static void main(List<GeoPosition> points)
   {
     MapPanel panel = new MapPanel();
     // Display the viewer in a JFrame
@@ -115,25 +112,15 @@ public class Sample2
     frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
     frame.setVisible(true);
 
-
-
-
-
-    GeoPosition frankfurt = new GeoPosition(50,  7, 0, 8, 41, 0);
-    GeoPosition wiesbaden = new GeoPosition(50,  5, 0, 8, 14, 0);
-    GeoPosition mainz     = new GeoPosition(50,  0, 0, 8, 16, 0);
-    GeoPosition darmstadt = new GeoPosition(49, 52, 0, 8, 39, 0);
-    GeoPosition offenbach = new GeoPosition(50,  6, 0, 8, 46, 0);
-
     // Create a track from the geo-positions
-    List<GeoPosition> track = Arrays.asList(frankfurt, wiesbaden, mainz, darmstadt, offenbach);
-    RoutePainter routePainter = new RoutePainter(track);
+    
+    RoutePainter routePainter = new RoutePainter(points);
 
     // Set the focus
-    panel.viewer.zoomToBestFit(new HashSet<GeoPosition>(track), 0.7);
+    panel.viewer.zoomToBestFit(new HashSet<GeoPosition>(points), 0.7);
 
     // Create waypoints from the geo-positions
-    Set<Waypoint> waypoints = new HashSet<Waypoint>(Arrays.asList(
+    /*Set<Waypoint> waypoints = new HashSet<Waypoint>(Arrays.asList(
         new DefaultWaypoint(frankfurt),
         new DefaultWaypoint(wiesbaden),
         new DefaultWaypoint(mainz),
@@ -149,7 +136,7 @@ public class Sample2
     painters.add(routePainter);
     painters.add(waypointPainter);
 
-    CompoundPainter<JXMapViewer> painter = new CompoundPainter<JXMapViewer>(painters);
-    panel.viewer.setOverlayPainter(painter);
+    CompoundPainter<JXMapViewer> painter = new CompoundPainter<JXMapViewer>(painters);*/
+    panel.viewer.setOverlayPainter(routePainter);
   }
 }

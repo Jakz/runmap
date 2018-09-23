@@ -23,6 +23,11 @@ public class RoutePainter implements Painter<JXMapViewer>
     private boolean antiAlias = true;
 
     private List<GeoPosition> track;
+    
+    public void setColor(Color color)
+    {
+      this.color = color;
+    }
 
     /**
      * @param track the track

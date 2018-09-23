@@ -16,9 +16,12 @@ import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
 import javax.xml.bind.JAXBException;
 
+import org.jxmapviewer.viewer.GeoPosition;
 import org.xml.sax.SAXException;
 
+import com.github.jakz.runmap.jxmap.Sample2;
 import com.pixbits.lib.functional.StreamException;
+import com.pixbits.lib.io.FileUtils;
 import com.pixbits.lib.io.FolderScanner;
 import com.pixbits.lib.io.xml.gpx.Coordinate;
 import com.pixbits.lib.io.xml.gpx.Gpx;
@@ -31,11 +34,6 @@ import com.pixbits.lib.ui.WrapperFrame;
 import com.pixbits.lib.ui.color.Color;
 import com.pixbits.lib.ui.color.GradientColorGenerator;
 import com.pixbits.lib.ui.table.DataSource;
-import com.teamdev.jxmaps.LatLng;
-import com.teamdev.jxmaps.LatLngBounds;
-import com.teamdev.jxmaps.Map;
-import com.teamdev.jxmaps.Rectangle;
-import com.teamdev.jxmaps.RectangleOptions;
 
 /**
  * Hello world!
@@ -111,23 +109,15 @@ public class App
       return;
     
     }
-    
-    Consumer<Map> callback = map -> {
-      try
-      {
-        App.setup(map);
-      }
-      catch (Exception e)
-      {
-        e.printStackTrace();
-      }
-    };
-    
-    MapPanel panel = new MapPanel(callback);
 
-    WrapperFrame<?> frame = UIUtils.buildFrame(panel, "Map");
-    frame.exitOnClose();
-    frame.setVisible(true);
+    try
+    {
+      setup();
+    }
+    catch (Exception e)
+    {
+      e.printStackTrace();
+    }
   }
   
   
@@ -143,17 +133,22 @@ public class App
     public boolean equals(Object o) { return (o instanceof Zone) && ((Zone)o).x == x && ((Zone)o).y == y; }
   }
   
-  public static void setup(Map map) throws IOException, SAXException, JAXBException
+  public static void setup() throws IOException, SAXException, JAXBException
   {
-    FolderScanner scanner = new FolderScanner("glob:*.fit", null, true);
+    FolderScanner scanner = new FolderScanner("glob:*.{gpx,fit}", null, true) ;
     Set<Path> files = scanner.scan(Paths.get("data"));
     
-    System.out.printf("Found %d gpx files\n", files.size());
+    System.out.printf("Found %d known files\n", files.size());
     
     List<Workout> tracks = files.stream()
+      .limit(5)
       .map(p -> { System.out.println("Parsing "+p.toString()); return p; })
-      .map(StreamException.rethrowFunction(p -> { return new FitParser().parse(p); }))
-      //.map(StreamException.rethrowFunction(GpxParser::parse))
+      .map(StreamException.rethrowFunction(p -> { 
+        if (FileUtils.pathExtension(p).equals("fit"))
+          return new FitParser().parse(p);
+        else
+          return GpxParser.parse(p);        
+      }))
       .flatMap(Gpx::stream)
       .flatMap(GpxTrack::stream)
       .map(Workout::new)
@@ -187,8 +182,8 @@ public class App
     System.out.printf("Computed %d zones\n", heatMap.size());
     float max = heatMap.values().stream().mapToInt(i -> i).max().getAsInt()+1;
     
-    map.setCenter(new LatLng(43.780582, 11.296338));
-    map.setZoom(16.0);
+    //map.setCenter(new LatLng(43.780582, 11.296338));
+    //map.setZoom(16.0);
     
     GradientColorGenerator generator = new GradientColorGenerator(new Color(255,0,0), new Color(255,255,0));
     
@@ -207,6 +202,7 @@ public class App
       rectangle.setBounds(new LatLngBounds(new LatLng(baseY, baseX), new LatLng(baseY + zoneHeight, baseX + zoneWidth)));
     }*/
     
+    /*
     for (Workout track : tracks)
     {
       GpsTrackLine line = new GpsTrackLine(map);
@@ -217,6 +213,12 @@ public class App
       line.setColor(java.awt.Color.RED);
       line.build();
     }
+    */
+    
+    List<GeoPosition> gp = tracks.get(51).gpx().stream().map(wp -> new GeoPosition(wp.coordinate().lat(), wp.coordinate().lng()))
+        .collect(Collectors.toList());
+    
+    Sample2.main(gp);
     
     JPanel panel = UIUtils.buildFillPanel(new WorkoutTable(DataSource.of(tracks)), true);
     WrapperFrame<?> frame = UIUtils.buildFrame(panel, "Workouts");
