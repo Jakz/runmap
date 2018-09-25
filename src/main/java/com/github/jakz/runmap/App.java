@@ -6,6 +6,7 @@ import java.nio.file.Paths;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Set;
@@ -19,10 +20,14 @@ import javax.xml.bind.JAXBException;
 import org.jxmapviewer.viewer.GeoPosition;
 import org.xml.sax.SAXException;
 
+import com.github.jakz.runmap.jxmap.MapPanel;
 import com.github.jakz.runmap.jxmap.Sample2;
+import com.github.jakz.runmap.ui.GlobalStatsTable;
+import com.github.jakz.runmap.ui.WorkoutTable;
 import com.pixbits.lib.functional.StreamException;
 import com.pixbits.lib.io.FileUtils;
 import com.pixbits.lib.io.FolderScanner;
+import com.pixbits.lib.io.xml.gpx.Bounds;
 import com.pixbits.lib.io.xml.gpx.Coordinate;
 import com.pixbits.lib.io.xml.gpx.Gpx;
 import com.pixbits.lib.io.xml.gpx.GpxParser;
@@ -141,7 +146,7 @@ public class App
     System.out.printf("Found %d known files\n", files.size());
     
     List<Workout> tracks = files.stream()
-      .limit(5)
+      //.limit(5)
       .map(p -> { System.out.println("Parsing "+p.toString()); return p; })
       .map(StreamException.rethrowFunction(p -> { 
         if (FileUtils.pathExtension(p).equals("fit"))
@@ -214,11 +219,29 @@ public class App
       line.build();
     }
     */
+
+    MapPanel mapPanel = new MapPanel();
+    WrapperFrame<?> mapFrame = UIUtils.buildFrame(mapPanel, "Routes");
+    mapFrame.exitOnClose();
+    mapFrame.setVisible(true);
     
-    List<GeoPosition> gp = tracks.get(51).gpx().stream().map(wp -> new GeoPosition(wp.coordinate().lat(), wp.coordinate().lng()))
-        .collect(Collectors.toList());
+    Bounds bounds = new Bounds();
+    tracks.forEach(track -> {
+      List<Coordinate> pts = track.gpx().stream().map(GpxWaypoint::coordinate).collect(Collectors.toList());
+      bounds.updateBound(pts);
+      mapPanel.painter().add(pts, java.awt.Color.RED);
+    });
     
-    Sample2.main(gp);
+    mapPanel.viewer().zoomToBestFit(
+        Arrays.asList(new Coordinate[] { bounds.ne(), bounds.sw() })
+          .stream()
+          .map(c -> new GeoPosition(c.lat(), c.lng()))
+          .collect(Collectors.toSet()
+        ), 0.7);
+    
+    
+
+    
     
     JPanel panel = UIUtils.buildFillPanel(new WorkoutTable(DataSource.of(tracks)), true);
     WrapperFrame<?> frame = UIUtils.buildFrame(panel, "Workouts");
