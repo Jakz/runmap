@@ -12,6 +12,8 @@ import javax.swing.JPanel;
 
 import org.jxmapviewer.JXMapViewer;
 import org.jxmapviewer.OSMTileFactoryInfo;
+import org.jxmapviewer.painter.CompoundPainter;
+import org.jxmapviewer.painter.Painter;
 import org.jxmapviewer.viewer.DefaultTileFactory;
 import org.jxmapviewer.viewer.GeoPosition;
 import org.jxmapviewer.viewer.TileFactoryInfo;
@@ -22,6 +24,7 @@ public class MapPanel extends JPanel
   TileFactoryInfo info;
   
   private RoutePainter routePainter;
+  private HeatMapPainter heatMapPainter;
   
   private final MouseListener mouseListener;
   
@@ -35,8 +38,12 @@ public class MapPanel extends JPanel
     viewer.setTileFactory(tileFactory);
     
     routePainter = new RoutePainter();
-    viewer.setOverlayPainter(routePainter);
     
+    heatMapPainter = new HeatMapPainter(0.0005, 0.0005 * 1.30);
+    
+    CompoundPainter<JXMapViewer> compositePainter = new CompoundPainter<>(heatMapPainter, routePainter);
+    viewer.setOverlayPainter(compositePainter);
+
     mouseListener = new MouseListener();
     addMouseListener(mouseListener);
     addMouseWheelListener(mouseListener);
@@ -47,7 +54,8 @@ public class MapPanel extends JPanel
   }
   
   public JXMapViewer viewer() { return viewer; }
-  public RoutePainter painter() { return routePainter; }
+  public RoutePainter routePainter() { return routePainter; }
+  public HeatMapPainter heatMapPainter() { return heatMapPainter; }
   
   private class MouseListener extends MouseAdapter
   {
@@ -67,11 +75,13 @@ public class MapPanel extends JPanel
         Rectangle bounds = viewer.getViewportBounds();
         viewer.setCenter(new Point2D.Float(bounds.x + e.getX(), bounds.y + e.getY()));
         routePainter.invalidate();
+        heatMapPainter.invalidate();
       }
       else if (dx > 0)
       {
         viewer.setZoom(Math.min(max, z + dx));
         routePainter.invalidate();
+        heatMapPainter.invalidate();
       }
     }
     

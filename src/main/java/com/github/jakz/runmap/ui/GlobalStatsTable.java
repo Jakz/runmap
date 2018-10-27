@@ -7,6 +7,7 @@ import javax.swing.table.AbstractTableModel;
 
 import com.github.jakz.runmap.Workout;
 import com.pixbits.lib.ui.table.DataSource;
+import com.pixbits.lib.util.TimeInterval;
 
 public class GlobalStatsTable extends JTable
 {
@@ -47,6 +48,7 @@ public class GlobalStatsTable extends JTable
   {
     double totalDistance;
     double longestDistance;
+    TimeInterval totalTime;
   }
   
   private Model model;
@@ -65,18 +67,21 @@ public class GlobalStatsTable extends JTable
   {
     data.totalDistance = workouts.stream().mapToDouble(Workout::length).sum();
     data.longestDistance = workouts.stream().mapToDouble(Workout::length).max().getAsDouble();
+    data.totalTime = workouts.stream().map(Workout::lapse).reduce(TimeInterval.zero(), TimeInterval::sum);
   }
   
   private final String[] titles = new String[] {
       "Amount",
       "Total Distance",
-      "Longest Distance"
+      "Longest Distance",
+      "Total Time"
     };
     
     private final Supplier<?>[] lambdas = new Supplier<?>[] {
       () -> workouts.size(),
       () -> String.format("%2.2f km", data.totalDistance),
-      () -> String.format("%2.2f km", data.longestDistance)
+      () -> String.format("%2.2f km", data.longestDistance),
+      () -> String.format("%d days, %d hours, %d minutes", data.totalTime.days(), data.totalTime.hours(), data.totalTime.minutes()),
 
     };
 }

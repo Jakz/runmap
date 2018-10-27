@@ -24,6 +24,7 @@ import com.github.jakz.runmap.jxmap.MapPanel;
 import com.github.jakz.runmap.jxmap.Sample2;
 import com.github.jakz.runmap.ui.GlobalStatsTable;
 import com.github.jakz.runmap.ui.WorkoutTable;
+import com.pixbits.lib.algorithm.DouglasPeucker2D;
 import com.pixbits.lib.functional.StreamException;
 import com.pixbits.lib.io.FileUtils;
 import com.pixbits.lib.io.FolderScanner;
@@ -146,7 +147,7 @@ public class App
     System.out.printf("Found %d known files\n", files.size());
     
     List<Workout> tracks = files.stream()
-      //.limit(5)
+      //.limit(1)
       .map(p -> { System.out.println("Parsing "+p.toString()); return p; })
       .map(StreamException.rethrowFunction(p -> { 
         if (FileUtils.pathExtension(p).equals("fit"))
@@ -168,24 +169,6 @@ public class App
         
     System.out.printf("Loaded %d waypoints\n", points.size());
 
-    final double zoneWidth = 0.001;// 0.0002;// 0.0005;
-    final double zoneHeight = zoneWidth * 0.76;
-    java.util.Map<Zone, Integer> heatMap = new HashMap<>();
-    
-    if ((1 / zoneWidth)*180.0 > Integer.MAX_VALUE || (1 / zoneHeight)*180.0 > Integer.MAX_VALUE)
-      throw new IllegalArgumentException("Zone is too small to be calculated");
-    
-    for (Coordinate p : points)
-    {
-      int zoneX = (int)(p.lng() / zoneWidth);
-      int zoneY = (int)(p.lat() / zoneHeight);
-      
-      Zone zone = new Zone(zoneX, zoneY);
-      heatMap.compute(zone, (z, i) -> i == null ? 1 : i + 1);
-    }
-
-    System.out.printf("Computed %d zones\n", heatMap.size());
-    float max = heatMap.values().stream().mapToInt(i -> i).max().getAsInt()+1;
     
     //map.setCenter(new LatLng(43.780582, 11.296338));
     //map.setZoom(16.0);
@@ -228,8 +211,13 @@ public class App
     Bounds bounds = new Bounds();
     tracks.forEach(track -> {
       List<Coordinate> pts = track.gpx().stream().map(GpxWaypoint::coordinate).collect(Collectors.toList());
+      
+      DouglasPeucker2D<Coordinate> simplify = new DouglasPeucker2D<>(new Coordinate[0], c -> c.lat() * 1000000, c -> c.lng()* Math.cos(c.lat()) * 1000000);
+      pts = Arrays.asList(simplify.simplify(pts.toArray(new Coordinate[0]), 50, false));
+      
       bounds.updateBound(pts);
-      mapPanel.painter().add(pts, java.awt.Color.RED);
+      mapPanel.routePainter().add(pts, java.awt.Color.RED);
+      mapPanel.heatMapPainter().addData(pts);
     });
     
     mapPanel.viewer().zoomToBestFit(

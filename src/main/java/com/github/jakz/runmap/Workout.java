@@ -217,6 +217,13 @@ public class Workout
   {
     double minutes = lapse.asMinutes();
     return minutes / length();
+    //TODO: this is in centesimals but it shouldn't
+  }
+  
+  public TimeInterval paceAsTime()
+  {
+    double pace = pace();
+    return TimeInterval.of(0, 0, 0, 0, (int)pace, (int)((pace - (int)pace)*60));
   }
   
   public double minAltitude()

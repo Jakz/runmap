@@ -18,6 +18,7 @@ import com.pixbits.lib.lang.Pair;
 import com.pixbits.lib.ui.color.ColorGenerator;
 import com.pixbits.lib.ui.color.PastelColorGenerator;
 import com.pixbits.lib.ui.color.PleasantColorGenerator;
+import com.pixbits.lib.ui.color.RandomColorGenerator;
 
 import org.jxmapviewer.painter.Painter;
 
@@ -50,10 +51,13 @@ public class RoutePainter implements Painter<JXMapViewer>
     this.tracks = new ArrayList<>();
   }
 
-  ColorGenerator generator = new PleasantColorGenerator();
+  ColorGenerator generator = new PleasantColorGenerator(0.99f, 0.99f);
   public void add(List<Coordinate> points, Color color)
   {
-    tracks.add(new CachedRoute(points, generator.getColor()));
+    synchronized (tracks)
+    {
+      tracks.add(new CachedRoute(points, generator.getColor()));
+    }
   }
 
   @Override
@@ -84,6 +88,8 @@ public class RoutePainter implements Painter<JXMapViewer>
       GeoPosition gpoint = new GeoPosition(point.lat(), point.lng());
       Point2D pt = map.getTileFactory().geoToPixel(gpoint, map.getZoom());
       
+      //System.out.println(pt);
+      
       if (first)
         track.pointCache.moveTo(pt.getX(), pt.getY());
       else
@@ -99,37 +105,6 @@ public class RoutePainter implements Painter<JXMapViewer>
       generatePolyLine(g, map,track);
     
     g.draw(track.pointCache);
-    
-    /*int[][] cache = track.pointCache;
-    for (int i = 0; i < cache[0].length-1; ++i)
-    {
-      System.out.printf("%d,%d -- %d %d\n", cache[0][i], cache[1][i], cache[0][i+1], cache[1][i+1]);
-      g.drawLine(cache[0][i], cache[1][i], cache[0][i+1], cache[1][i+1]);
-    }*/
-    
-    /*int lastX = 0;
-    int lastY = 0;
-    boolean first = true;
-
-    for (int i = 0; i < track.track.size(); ++i)
-    {
-      // convert geo-coordinate to world bitmap pixel
-      Coordinate point = track.track.get(i);
-      GeoPosition gp = new GeoPosition(point.lat(), point.lng());
-      Point2D pt = map.getTileFactory().geoToPixel(gp, map.getZoom());
-
-      if (first)
-      {
-        first = false;
-      }
-      else
-      {
-        g.drawLine(lastX, lastY, (int) pt.getX(), (int) pt.getY());
-      }
-
-      lastX = (int) pt.getX();
-      lastY = (int) pt.getY();
-    }*/
   }
   
   public void invalidate()
@@ -137,20 +112,19 @@ public class RoutePainter implements Painter<JXMapViewer>
     tracks.forEach(track -> track.pointCache = null);
   }
 
-  /**
-   * @param g the graphics object
-   * @param map the map
-   */
   private void drawRoute(Graphics2D g, JXMapViewer map)
   {
-    for (CachedRoute track : tracks)
+    synchronized (tracks)
     {
-      Color color = new Color(track.color.getRed(), track.color.getGreen(), track.color.getBlue(), 180);
-
-      g.setColor(color);
-      g.setStroke(new BasicStroke(4, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
-      drawPolyLine(g, map, track);
-
+      for (CachedRoute track : tracks)
+      {
+        Color color = new Color(track.color.getRed(), track.color.getGreen(), track.color.getBlue(), 220);
+  
+        g.setColor(color);
+        g.setStroke(new BasicStroke(1, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+        drawPolyLine(g, map, track);
+  
+      }
     }
   }
 }

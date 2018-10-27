@@ -46,8 +46,8 @@ public class WorkoutTable extends JTable
     speed.setRenderer(new LambdaLabelTableRenderer<>((v,l) -> l.setText(String.format("%2.2f km/h", v))));
     model.addColumn(speed);
     
-    ColumnSpec<Workout, Double> pace = new ColumnSpec<>("Pace", Double.class, w -> w.pace());
-    pace.setRenderer(new LambdaLabelTableRenderer<>((v,l) -> l.setText(String.format("%2.2f min", v))));
+    ColumnSpec<Workout, TimeInterval> pace = new ColumnSpec<>("Pace", TimeInterval.class, w -> w.paceAsTime());
+    pace.setRenderer(new TimeIntervalRenderer(null));
     model.addColumn(pace);
     
     ColumnSpec<Workout, Double> climb = new ColumnSpec<>("Climb", Double.class, w -> w.climb());
