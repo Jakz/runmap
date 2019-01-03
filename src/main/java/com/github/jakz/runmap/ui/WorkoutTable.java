@@ -1,10 +1,14 @@
 package com.github.jakz.runmap.ui;
 
+import java.awt.Point;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.time.ZonedDateTime;
 import java.time.format.FormatStyle;
 
 import javax.swing.JTable;
 
+import com.github.jakz.runmap.Mediator;
 import com.github.jakz.runmap.Workout;
 import com.pixbits.lib.io.xml.gpx.GpxWaypoint;
 import com.pixbits.lib.ui.table.ColumnSpec;
@@ -18,11 +22,14 @@ import com.pixbits.lib.util.TimeInterval;
 
 public class WorkoutTable extends JTable
 {
+  private Mediator mediator;
+  
   DataSource<Workout> data;
   TableModel<Workout> model;
   
-  public WorkoutTable(DataSource<Workout> data)
+  public WorkoutTable(Mediator mediator, DataSource<Workout> data)
   {
+    this.mediator = mediator;
     this.data = data;
     this.model = new TableModel<>(this, data);
 
@@ -67,5 +74,19 @@ public class WorkoutTable extends JTable
     model.addColumn(calories);
     
     this.setAutoCreateRowSorter(true);
+    
+    addMouseListener(new MouseAdapter() {
+      public void mousePressed(MouseEvent mouseEvent) 
+      {
+          JTable table = (JTable)mouseEvent.getSource();
+          Point point = mouseEvent.getPoint();
+          int row = table.rowAtPoint(point);
+          if (mouseEvent.getClickCount() == 2 && table.getSelectedRow() != -1) 
+          {
+            int rrow = table.convertRowIndexToModel(row);
+            mediator.onWorkoutSelected(data.get(rrow));
+          }
+      }
+    });
   }
 }

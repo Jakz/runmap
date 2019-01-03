@@ -21,7 +21,9 @@ import org.jxmapviewer.viewer.GeoPosition;
 import org.xml.sax.SAXException;
 
 import com.github.jakz.runmap.jxmap.MapPanel;
+import com.github.jakz.runmap.jxmap.RoutePainter.CachedRoute;
 import com.github.jakz.runmap.jxmap.Sample2;
+import com.github.jakz.runmap.ui.ChartPanel;
 import com.github.jakz.runmap.ui.GlobalStatsTable;
 import com.github.jakz.runmap.ui.WorkoutTable;
 import com.pixbits.lib.algorithm.DouglasPeucker2D;
@@ -139,6 +141,13 @@ public class App
     public boolean equals(Object o) { return (o instanceof Zone) && ((Zone)o).x == x && ((Zone)o).y == y; }
   }
   
+  private static final WorkoutCache cache = new WorkoutCache();
+  private static final Mediator mediator = new MyMediator();
+  
+  private static MapPanel mapPanel;
+  
+  private static WrapperFrame<ChartPanel> chartFrame;
+  
   public static void setup() throws IOException, SAXException, JAXBException
   {
     FolderScanner scanner = new FolderScanner("glob:*.{gpx,fit}", null, true) ;
@@ -147,7 +156,7 @@ public class App
     System.out.printf("Found %d known files\n", files.size());
     
     List<Workout> tracks = files.stream()
-      //.limit(1)
+      .limit(5)
       .map(p -> { System.out.println("Parsing "+p.toString()); return p; })
       .map(StreamException.rethrowFunction(p -> { 
         if (FileUtils.pathExtension(p).equals("fit"))
@@ -203,35 +212,33 @@ public class App
     }
     */
 
-    MapPanel mapPanel = new MapPanel();
+    mapPanel = new MapPanel();
     WrapperFrame<?> mapFrame = UIUtils.buildFrame(mapPanel, "Routes");
     mapFrame.exitOnClose();
     mapFrame.setVisible(true);
     
-    Bounds bounds = new Bounds();
+    Bounds totalBounds = new Bounds();
     tracks.forEach(track -> {
       List<Coordinate> pts = track.gpx().stream().map(GpxWaypoint::coordinate).collect(Collectors.toList());
       
       DouglasPeucker2D<Coordinate> simplify = new DouglasPeucker2D<>(new Coordinate[0], c -> c.lat() * 1000000, c -> c.lng()* Math.cos(c.lat()) * 1000000);
       pts = Arrays.asList(simplify.simplify(pts.toArray(new Coordinate[0]), 50, false));
       
-      bounds.updateBound(pts);
-      mapPanel.routePainter().add(pts, java.awt.Color.RED);
+      Bounds bounds = new Bounds(pts);
+      CachedRoute route = mapPanel.routePainter().add(pts, java.awt.Color.RED);
+      cache.addCachedRoute(track, route);
+      cache.addBounds(track, bounds);
+      totalBounds.updateBound(bounds);
       mapPanel.heatMapPainter().addData(pts);
     });
     
-    mapPanel.viewer().zoomToBestFit(
-        Arrays.asList(new Coordinate[] { bounds.ne(), bounds.sw() })
-          .stream()
-          .map(c -> new GeoPosition(c.lat(), c.lng()))
-          .collect(Collectors.toSet()
-        ), 0.7);
+    mapPanel.zoomToFit(totalBounds, 0.7f);
     
     
 
     
     
-    JPanel panel = UIUtils.buildFillPanel(new WorkoutTable(DataSource.of(tracks)), true);
+    JPanel panel = UIUtils.buildFillPanel(new WorkoutTable(mediator, DataSource.of(tracks)), true);
     WrapperFrame<?> frame = UIUtils.buildFrame(panel, "Workouts");
     frame.exitOnClose();
     frame.setVisible(true);
@@ -239,5 +246,30 @@ public class App
     JPanel globalStats = UIUtils.buildFillPanel(new GlobalStatsTable(DataSource.of(tracks)), true);
     WrapperFrame<?> globalStatsFrame = UIUtils.buildFrame(globalStats, "Statistics");
     globalStatsFrame.setVisible(true);
+    
+    ChartPanel chartPanel = new ChartPanel();
+    chartFrame = UIUtils.buildFrame(chartPanel, "Chart");
+  }
+  
+  private static class MyMediator implements Mediator
+  {
+    Workout selection = null;
+    
+    @Override
+    public void onWorkoutSelected(Workout workout) 
+    {
+      if (selection != null)
+        cache.getRoute(selection).setWidth(1);
+      
+      selection = workout;
+       
+      
+      chartFrame.panel().showForAltitude(workout);
+      cache.getRoute(workout).setWidth(10);
+      chartFrame.setVisible(true);
+      
+      mapPanel.zoomToFit(cache.getBounds(workout), 0.7f);
+    }
+    
   }
 }

@@ -7,6 +7,8 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseWheelEvent;
 import java.awt.geom.Point2D;
+import java.util.Arrays;
+import java.util.stream.Collectors;
 
 import javax.swing.JPanel;
 
@@ -17,6 +19,9 @@ import org.jxmapviewer.painter.Painter;
 import org.jxmapviewer.viewer.DefaultTileFactory;
 import org.jxmapviewer.viewer.GeoPosition;
 import org.jxmapviewer.viewer.TileFactoryInfo;
+
+import com.pixbits.lib.io.xml.gpx.Bounds;
+import com.pixbits.lib.io.xml.gpx.Coordinate;
 
 public class MapPanel extends JPanel
 {
@@ -56,6 +61,20 @@ public class MapPanel extends JPanel
   public JXMapViewer viewer() { return viewer; }
   public RoutePainter routePainter() { return routePainter; }
   public HeatMapPainter heatMapPainter() { return heatMapPainter; }
+  
+  public void zoomToFit(Bounds bounds, float maxFraction)
+  {
+    viewer.zoomToBestFit(
+    Arrays.asList(new Coordinate[] { bounds.ne(), bounds.sw() })
+    .stream()
+    .map(c -> new GeoPosition(c.lat(), c.lng()))
+    .collect(Collectors.toSet()
+        ), 0.7);
+    
+    routePainter.invalidate();
+    heatMapPainter.invalidate();
+  }
+  
   
   private class MouseListener extends MouseAdapter
   {

@@ -28,9 +28,11 @@ import org.jxmapviewer.painter.Painter;
  */
 public class RoutePainter implements Painter<JXMapViewer>
 {
-  private class CachedRoute
+  public class CachedRoute
   {
     List<Coordinate> track;
+    
+    int width;
     Color color;
     Path2D pointCache;
     
@@ -38,7 +40,10 @@ public class RoutePainter implements Painter<JXMapViewer>
     {
       this.track = track;
       this.color = color;
+      this.width = 1;
     }
+    
+    public void setWidth(int width) { this.width = width; }
   }
   
   private boolean antiAlias = true;
@@ -52,11 +57,13 @@ public class RoutePainter implements Painter<JXMapViewer>
   }
 
   ColorGenerator generator = new PleasantColorGenerator(0.99f, 0.99f);
-  public void add(List<Coordinate> points, Color color)
+  public CachedRoute add(List<Coordinate> points, Color color)
   {
     synchronized (tracks)
     {
-      tracks.add(new CachedRoute(points, generator.getColor()));
+      CachedRoute route = new CachedRoute(points, generator.getColor());
+      tracks.add(route);
+      return route;
     }
   }
 
@@ -121,7 +128,7 @@ public class RoutePainter implements Painter<JXMapViewer>
         Color color = new Color(track.color.getRed(), track.color.getGreen(), track.color.getBlue(), 220);
   
         g.setColor(color);
-        g.setStroke(new BasicStroke(1, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+        g.setStroke(new BasicStroke(track.width, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
         drawPolyLine(g, map, track);
   
       }
