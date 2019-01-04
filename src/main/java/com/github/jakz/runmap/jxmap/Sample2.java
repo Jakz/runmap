@@ -15,6 +15,8 @@ import org.jxmapviewer.viewer.GeoPosition;
 import org.jxmapviewer.viewer.Waypoint;
 import org.jxmapviewer.viewer.WaypointPainter;
 
+import com.pixbits.lib.ui.map.MapPanel;
+
 /**
  * A simple sample application that shows
  * a OSM map of Europe containing a route with waypoints
@@ -24,7 +26,7 @@ public class Sample2
 {
   public static void main(List<GeoPosition> points)
   {
-    MapPanel panel = new MapPanel();
+    MapPanel panel = new MapPanel(1000, 1000);
     // Display the viewer in a JFrame
     JFrame frame = new JFrame("JXMapviewer2 Example 2");
     frame.getContentPane().add(panel);
@@ -35,7 +37,7 @@ public class Sample2
     // Create a track from the geo-positions
     
     // Set the focus
-    panel.viewer.zoomToBestFit(new HashSet<GeoPosition>(points), 0.7);
+    //panel.viewer.zoomToBestFit(new HashSet<GeoPosition>(points), 0.7);
 
     // Create waypoints from the geo-positions
     /*Set<Waypoint> waypoints = new HashSet<Waypoint>(Arrays.asList(

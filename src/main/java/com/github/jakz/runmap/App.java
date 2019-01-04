@@ -20,9 +20,8 @@ import javax.xml.bind.JAXBException;
 import org.jxmapviewer.viewer.GeoPosition;
 import org.xml.sax.SAXException;
 
-import com.github.jakz.runmap.jxmap.MapPanel;
-import com.github.jakz.runmap.jxmap.RoutePainter.CachedRoute;
 import com.github.jakz.runmap.jxmap.Sample2;
+import com.github.jakz.runmap.jxmap.WorkoutMapPanel;
 import com.github.jakz.runmap.ui.ChartPanel;
 import com.github.jakz.runmap.ui.GlobalStatsTable;
 import com.github.jakz.runmap.ui.WorkoutTable;
@@ -41,6 +40,10 @@ import com.pixbits.lib.ui.UIUtils;
 import com.pixbits.lib.ui.WrapperFrame;
 import com.pixbits.lib.ui.color.Color;
 import com.pixbits.lib.ui.color.GradientColorGenerator;
+import com.pixbits.lib.ui.map.HeatMapPainter;
+import com.pixbits.lib.ui.map.MapPanel;
+import com.pixbits.lib.ui.map.PolylineElement;
+import com.pixbits.lib.ui.map.PolylinePainter;
 import com.pixbits.lib.ui.table.DataSource;
 
 /**
@@ -144,7 +147,7 @@ public class App
   private static final WorkoutCache cache = new WorkoutCache();
   private static final Mediator mediator = new MyMediator();
   
-  private static MapPanel mapPanel;
+  private static WorkoutMapPanel mapPanel;
   
   private static WrapperFrame<ChartPanel> chartFrame;
   
@@ -178,41 +181,11 @@ public class App
         
     System.out.printf("Loaded %d waypoints\n", points.size());
 
-    
-    //map.setCenter(new LatLng(43.780582, 11.296338));
-    //map.setZoom(16.0);
-    
     GradientColorGenerator generator = new GradientColorGenerator(new Color(255,0,0), new Color(255,255,0));
-    
-    /*for (java.util.Map.Entry<Zone, Integer> entry : heatMap.entrySet())
-    {
-      Zone zone = entry.getKey();
-      
-      Rectangle rectangle = new Rectangle(map);
-      RectangleOptions roptions = new RectangleOptions();
-      roptions.setStrokeWeight(0.0);
-      roptions.setFillColor(generator.getColor(entry.getValue()/max).toCSS());
-      roptions.setFillOpacity(0.6);
-      rectangle.setOptions(roptions);
-      
-      double baseX = zone.x()*zoneWidth, baseY = zone.y()*zoneHeight;
-      rectangle.setBounds(new LatLngBounds(new LatLng(baseY, baseX), new LatLng(baseY + zoneHeight, baseX + zoneWidth)));
-    }*/
-    
-    /*
-    for (Workout track : tracks)
-    {
-      GpsTrackLine line = new GpsTrackLine(map);
-      line.setSegment(track.gpx());
-      line.setWeight(3.0f);
-      line.setOpacity(0.6f);
-      line.setVisible(true);
-      line.setColor(java.awt.Color.RED);
-      line.build();
-    }
-    */
 
-    mapPanel = new MapPanel();
+
+    mapPanel = new WorkoutMapPanel();
+
     WrapperFrame<?> mapFrame = UIUtils.buildFrame(mapPanel, "Routes");
     mapFrame.exitOnClose();
     mapFrame.setVisible(true);
@@ -225,7 +198,7 @@ public class App
       pts = Arrays.asList(simplify.simplify(pts.toArray(new Coordinate[0]), 50, false));
       
       Bounds bounds = new Bounds(pts);
-      CachedRoute route = mapPanel.routePainter().add(pts, java.awt.Color.RED);
+      PolylineElement route = mapPanel.routePainter().add(pts, java.awt.Color.RED);
       cache.addCachedRoute(track, route);
       cache.addBounds(track, bounds);
       totalBounds.updateBound(bounds);

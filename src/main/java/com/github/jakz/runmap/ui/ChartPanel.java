@@ -52,6 +52,7 @@ public class ChartPanel extends JPanel
     series.setLineStyle(SeriesLines.SOLID);
     
     panel = new XChartPanel<>(chart);
+    removeAll();
     add(panel, BorderLayout.CENTER);
     
     invalidate();
