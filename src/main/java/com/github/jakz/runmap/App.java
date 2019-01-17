@@ -163,20 +163,19 @@ public class App
       .map(p -> { System.out.println("Parsing "+p.toString()); return p; })
       .map(StreamException.rethrowFunction(p -> { 
         if (FileUtils.pathExtension(p).equals("fit"))
-          return new FitParser().parse(p);
+          return List.of(new FitParser().parse(p));
         else
-          return GpxParser.parse(p);        
+          return GpxParser.parse(p).stream().flatMap(GpxTrack::stream).map(s -> new WorkoutTrack(s.stream().map(WorkoutPoint::new).collect(Collectors.toList()))).collect(Collectors.toList());       
       }))
-      .flatMap(Gpx::stream)
-      .flatMap(GpxTrack::stream)
+      .flatMap(List::stream)
       .map(Workout::new)
       .sorted((w1, w2) -> w2.start().compareTo(w1.start()))
       .collect(Collectors.toList());
     
     List<Coordinate> points = tracks.stream()
-      .map(s -> { System.out.println(s.start()+"  Length: "+s.length()+ " Altitude sum: "+s.altitudeSum()+" delta: "+s.altitudeDifference()+" climb: "+s.climb()); return s.gpx(); })
-      .flatMap(GpxTrackSegment::stream)
-      .map(GpxWaypoint::coordinate)
+      .map(s -> { System.out.println(s.start()+"  Length: "+s.length()+ " Altitude sum: "+s.altitudeSum()+" delta: "+s.altitudeDifference()+" climb: "+s.climb()); return s.track(); })
+      .flatMap(WorkoutTrack::stream)
+      .map(WorkoutPoint::coordinate)
       .collect(Collectors.toList());    
         
     System.out.printf("Loaded %d waypoints\n", points.size());
@@ -192,7 +191,7 @@ public class App
     
     Bounds totalBounds = new Bounds();
     tracks.forEach(track -> {
-      List<Coordinate> pts = track.gpx().stream().map(GpxWaypoint::coordinate).collect(Collectors.toList());
+      List<Coordinate> pts = track.stream().map(WorkoutPoint::coordinate).collect(Collectors.toList());
       
       DouglasPeucker2D<Coordinate> simplify = new DouglasPeucker2D<>(new Coordinate[0], c -> c.lat() * 1000000, c -> c.lng()* Math.cos(c.lat()) * 1000000);
       pts = Arrays.asList(simplify.simplify(pts.toArray(new Coordinate[0]), 50, false));
@@ -208,7 +207,7 @@ public class App
     mapPanel.zoomToFit(totalBounds, 0.7f);
     
     
-
+    mapPanel.heatMapPainter().enabled = false;
     
     
     JPanel panel = UIUtils.buildFillPanel(new WorkoutTable(mediator, DataSource.of(tracks)), true);

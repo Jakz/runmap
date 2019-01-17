@@ -33,15 +33,17 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 
 public class FitParser
 {
-  Gpx gpx;
-  GpxTrack track;
-  GpxTrackSegment segment;
+  List<WorkoutPoint> points;
+  WorkoutTrack track;
+
   
-  public Gpx parse(Path path) throws IOException
+  public WorkoutTrack parse(Path path) throws IOException
   {
     Decode decode = new Decode();
     MesgBroadcaster mesgBroadcaster = new MesgBroadcaster(decode);
@@ -55,18 +57,14 @@ public class FitParser
     
     try (BufferedInputStream in = new BufferedInputStream(Files.newInputStream(path)))
     {
-      gpx = new Gpx("1.1", "com.github.jakz.runmap");
-      track = new GpxTrack("Running"); //TODO: enhance name
-      segment = new GpxTrackSegment();
-      gpx.tracks().add(track);
-      track.segments().add(segment);
+      points = new ArrayList<>();
       
       mesgBroadcaster.addListener((DeviceInfoMesgListener) listener);
       mesgBroadcaster.addListener((RecordMesgListener) listener);
       decode.read(in, mesgBroadcaster, mesgBroadcaster);
     }
     
-    return gpx;
+    return new WorkoutTrack(points);
   }
 
   private class Listener implements DeviceInfoMesgListener, RecordMesgListener
@@ -100,11 +98,12 @@ public class FitParser
             ? mesg.getHeartRate()
             : 0;
 
-        GpxWaypoint waypoint = new GpxWaypoint();    
-        Coordinate coord = new Coordinate(latitude, longitude, altitude);
-        waypoint.setCoordinate(coord);
-        waypoint.setTime(ZonedDateTime.ofInstant(timestamp.getDate().toInstant(), ZoneId.systemDefault()));
-        segment.points().add(waypoint);
+        WorkoutPoint waypoint = new WorkoutPoint(
+            ZonedDateTime.ofInstant(timestamp.getDate().toInstant(), ZoneId.systemDefault()),
+            new Coordinate(latitude, longitude, altitude)
+        );    
+
+        points.add(waypoint);
             
         /*System.out.printf("time %s, lat %2.6f, lon %2.6f, alt %2.2f, hr %d\n",
             timeStampFormatter.format(timestamp.getDate().toInstant()),
