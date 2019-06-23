@@ -22,9 +22,9 @@ import org.knowm.xchart.style.colors.XChartSeriesColors;
 import org.knowm.xchart.style.lines.SeriesLines;
 import org.knowm.xchart.style.markers.SeriesMarkers;
 
-import com.github.jakz.runmap.Workout;
-import com.github.jakz.runmap.WorkoutPoint;
-import com.github.jakz.runmap.WorkoutTrack;
+import com.github.jakz.runmap.data.Workout;
+import com.github.jakz.runmap.data.WorkoutPoint;
+import com.github.jakz.runmap.data.WorkoutTrack;
 import com.pixbits.lib.io.xml.gpx.Coordinate;
 import com.pixbits.lib.io.xml.gpx.GpxTrackSegment;
 import com.pixbits.lib.io.xml.gpx.GpxWaypoint;

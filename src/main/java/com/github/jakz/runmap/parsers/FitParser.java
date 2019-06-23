@@ -14,14 +14,13 @@
 // Tag = production/akw/20.74.01-0-ge94e71c
 ////////////////////////////////////////////////////////////////////////////////
 
-package com.github.jakz.runmap;
+package com.github.jakz.runmap.parsers;
 
 import com.garmin.fit.*;
+import com.github.jakz.runmap.data.WorkoutPoint;
+import com.github.jakz.runmap.data.WorkoutTrack;
+import com.pixbits.lib.io.FileUtils;
 import com.pixbits.lib.io.xml.gpx.Coordinate;
-import com.pixbits.lib.io.xml.gpx.Gpx;
-import com.pixbits.lib.io.xml.gpx.GpxTrack;
-import com.pixbits.lib.io.xml.gpx.GpxTrackSegment;
-import com.pixbits.lib.io.xml.gpx.GpxWaypoint;
 
 import java.io.BufferedInputStream;
 import java.io.FileInputStream;
@@ -32,18 +31,21 @@ import java.nio.file.Path;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
-import java.time.format.FormatStyle;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
-public class FitParser
+public class FitParser implements Parser
 {
   List<WorkoutPoint> points;
   WorkoutTrack track;
 
+  public boolean canParse(Path path)
+  {
+    return FileUtils.pathExtension(path).equals("fit");
+  }
   
-  public WorkoutTrack parse(Path path) throws IOException
+  public List<WorkoutTrack> parse(Path path) throws IOException
   {
     Decode decode = new Decode();
     MesgBroadcaster mesgBroadcaster = new MesgBroadcaster(decode);
@@ -64,7 +66,7 @@ public class FitParser
       decode.read(in, mesgBroadcaster, mesgBroadcaster);
     }
     
-    return new WorkoutTrack(points);
+    return List.of(new WorkoutTrack(points));
   }
 
   private class Listener implements DeviceInfoMesgListener, RecordMesgListener
@@ -100,7 +102,8 @@ public class FitParser
 
         WorkoutPoint waypoint = new WorkoutPoint(
             ZonedDateTime.ofInstant(timestamp.getDate().toInstant(), ZoneId.systemDefault()),
-            new Coordinate(latitude, longitude, altitude)
+            new Coordinate(latitude, longitude, altitude),
+            hr
         );    
 
         points.add(waypoint);

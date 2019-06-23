@@ -20,8 +20,13 @@ import javax.xml.bind.JAXBException;
 import org.jxmapviewer.viewer.GeoPosition;
 import org.xml.sax.SAXException;
 
+import com.github.jakz.runmap.data.Workout;
+import com.github.jakz.runmap.data.WorkoutPoint;
+import com.github.jakz.runmap.data.WorkoutTrack;
 import com.github.jakz.runmap.jxmap.Sample2;
 import com.github.jakz.runmap.jxmap.WorkoutMapPanel;
+import com.github.jakz.runmap.parsers.FitParser;
+import com.github.jakz.runmap.parsers.ParserRepository;
 import com.github.jakz.runmap.ui.ChartPanel;
 import com.github.jakz.runmap.ui.GlobalStatsTable;
 import com.github.jakz.runmap.ui.WorkoutTable;
@@ -153,20 +158,30 @@ public class App
   
   public static void setup() throws IOException, SAXException, JAXBException
   {
-    FolderScanner scanner = new FolderScanner("glob:*.{gpx,fit}", null, true) ;
+    ParserRepository parsers = new ParserRepository();
+    FolderScanner scanner = new FolderScanner("glob:*.*", null, true);
     Set<Path> files = scanner.scan(Paths.get("data"));
     
+    files = files.stream()
+        .filter(parsers::canBeParsed)
+        .collect(Collectors.toSet());
+
     System.out.printf("Found %d known files\n", files.size());
     
     List<Workout> tracks = files.stream()
-      .limit(5)
+      .limit(20)
       .map(p -> { System.out.println("Parsing "+p.toString()); return p; })
-      .map(StreamException.rethrowFunction(p -> { 
-        if (FileUtils.pathExtension(p).equals("fit"))
-          return List.of(new FitParser().parse(p));
-        else
-          return GpxParser.parse(p).stream().flatMap(GpxTrack::stream).map(s -> new WorkoutTrack(s.stream().map(WorkoutPoint::new).collect(Collectors.toList()))).collect(Collectors.toList());       
-      }))
+      .map(p -> {
+        try
+        {
+          return parsers.parse(p);
+        }
+        catch (Exception e)
+        {
+          e.printStackTrace();
+          return new ArrayList<WorkoutTrack>();
+        }
+      })
       .flatMap(List::stream)
       .map(Workout::new)
       .sorted((w1, w2) -> w2.start().compareTo(w1.start()))

@@ -9,7 +9,7 @@ import java.time.format.FormatStyle;
 import javax.swing.JTable;
 
 import com.github.jakz.runmap.Mediator;
-import com.github.jakz.runmap.Workout;
+import com.github.jakz.runmap.data.Workout;
 import com.pixbits.lib.io.xml.gpx.GpxWaypoint;
 import com.pixbits.lib.ui.table.ColumnSpec;
 import com.pixbits.lib.ui.table.DataSource;

@@ -1,4 +1,4 @@
-package com.github.jakz.runmap;
+package com.github.jakz.runmap.data;
 
 import java.time.ZonedDateTime;
 

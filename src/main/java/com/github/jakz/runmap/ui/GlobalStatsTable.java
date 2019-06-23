@@ -5,7 +5,7 @@ import java.util.function.Supplier;
 import javax.swing.JTable;
 import javax.swing.table.AbstractTableModel;
 
-import com.github.jakz.runmap.Workout;
+import com.github.jakz.runmap.data.Workout;
 import com.pixbits.lib.ui.table.DataSource;
 import com.pixbits.lib.util.TimeInterval;
 

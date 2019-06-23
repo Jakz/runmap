@@ -3,6 +3,7 @@ package com.github.jakz.runmap;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.github.jakz.runmap.data.Workout;
 import com.pixbits.lib.io.xml.gpx.Bounds;
 import com.pixbits.lib.ui.map.MapPanel;
 import com.pixbits.lib.ui.map.PolylineElement;
