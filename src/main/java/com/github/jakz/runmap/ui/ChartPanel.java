@@ -86,9 +86,9 @@ public class ChartPanel extends JPanel
     List<Double> altitudes = track.stream().map(WorkoutPoint::coordinate).map(Coordinate::alt).collect(Collectors.toList());
 
     
-    chart = new XYChartBuilder().width(400).height(400).title("Altitude").xAxisTitle("time").yAxisTitle("beats/minute").build();   
+    chart = new XYChartBuilder().width(400).height(400).title("Altitude").xAxisTitle("time").yAxisTitle("meters").build();   
     
-    XYSeries series = chart.addSeries("Heart Rate", timestamps, altitudes);
+    XYSeries series = chart.addSeries("Altitude", timestamps, altitudes);
     series.setLineColor(XChartSeriesColors.GREEN);
     //series.setMarkerColor(Color.ORANGE);
     series.setMarker(SeriesMarkers.NONE);

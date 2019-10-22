@@ -117,7 +117,7 @@ public class Workout
     {
       int hr = point.heartRate();
       
-      if (hr >= 0)
+      if (hr > 0)
       {
         maxHeartRate = Math.max(maxHeartRate, hr);
         minHeartRate = Math.min(minHeartRate, hr);

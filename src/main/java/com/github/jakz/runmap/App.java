@@ -169,7 +169,7 @@ public class App
     System.out.printf("Found %d known files\n", files.size());
     
     List<Workout> tracks = files.stream()
-      .limit(20)
+      //.limit(20)
       .map(p -> { System.out.println("Parsing "+p.toString()); return p; })
       .map(p -> {
         try
